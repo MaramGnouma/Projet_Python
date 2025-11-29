@@ -1,0 +1,203 @@
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Système de Scanning de Ports</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <!-- Modal Warning Scan Complet -->
+    <div class="modal-overlay" id="warningModal">
+        <div class="modal-content warning-modal">
+            <div class="modal-header">
+                <h2> Avertissement - Scan Complet</h2>
+            </div>
+            <div style="padding: 20px; text-align: center;">
+                <p style="color: #f59e0b; font-size: 1.1em; margin-bottom: 20px;">
+                    Ce scan complet analysera les <strong>ports ET packages</strong> du système.
+                </p>
+                <p style="color: #a0a0a0; margin-bottom: 30px;">
+                    Cette opération peut prendre plusieurs minutes.<br>
+                    Êtes-vous sûr de vouloir continuer ?
+                </p>
+                <div style="display: flex; gap: 15px; justify-content: center;">
+                    <button class="btn-danger" onclick="closeWarningModal()"> Annuler</button>
+                    <button class="btn-primary" onclick="confirmCompleteScan()"> Confirmer le Scan</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Configuration Scan -->
+    <div class="modal-overlay" id="scanModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2> Configuration du Scan</h2>
+                <p style="color: #a0a0a0;">Choisissez le type de scan à effectuer</p>
+            </div>
+
+            <div class="scan-type-selector">
+                <div class="scan-type-btn active" onclick="selectScanMode('complete')">
+                    <h3> Scan Complet</h3>
+                    <p>Ports + Packages (prend du temps)</p>
+                </div>
+                <div class="scan-type-btn" onclick="selectScanMode('custom')">
+                    <h3> Personnalisé</h3>
+                    <p>Configurez vos paramètres</p>
+                </div>
+            </div>
+
+            <!-- Configuration Scan Complet (formulaire sera inséré  dynamiquement à travers fct : createPortScanForm)  -->
+            <div class="complete-config" id="completeConfig"> </div>
+
+            <!-- Configuration Personnalisée -->
+            <div class="custom-config" id="customConfig" style="display: none;">
+                <div class="custom-type-selector">
+                    <button class="custom-option-btn" id="portBtn" onclick="selectCustomType('port')">
+                        <h4> Scanner Ports</h4>
+                        <p>Analyse des ports réseau</p>
+                    </button>
+                    <button class="custom-option-btn" id="packageBtn" onclick="selectCustomType('package')">
+                        <h4> Scanner Packages</h4>
+                        <p>Analyse des packages système</p>
+                    </button>
+                </div>
+
+                <!-- Formulaire Scan Port (formulaire sera inséré  dynamiquement à travers fct : createPortScanForm) -->
+                <div id="portScanForm" style="display: none; margin-top: 20px;"> </div>
+
+                <!-- Formulaire Scan Package -->
+                <div id="packageScanForm" style="display: none; margin-top: 20px;">
+                    <p style="color: #a0a0a0; text-align: center;">
+                        Le scan de packages analysera tous les packages installés sur le système.
+                    </p>
+                </div>
+            </div>
+
+            <div class="modal-buttons">
+                <button class="btn-danger" onclick="closeModal()"> Annuler</button>
+                <button class="btn-primary" onclick="startScanFromModal()"> Lancer le Scan</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Firewall -->
+    <div class="modal-overlay" id="firewallModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2> Gestion Firewall</h2>
+                <p style="color: #a0a0a0;">Ouvrir ou fermer un port</p>
+            </div>
+
+            <div class="form-group">
+                <label for="firewall-port">Numéro de Port</label>
+                <input type="number" id="firewall-port" placeholder="Ex: 8080" min="1" max="65535">
+            </div>
+
+            <div class="form-group">
+                <label for="firewall-action">Action</label>
+                <select id="firewall-action">
+                    <option value="open"> Ouvrir le port</option>
+                    <option value="close"> Fermer le port</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label for="firewall-protocol">Protocole</label>
+                <select id="firewall-protocol">
+                    <option value="tcp">TCP</option>
+                    <option value="udp">UDP</option>
+                    <option value="both">TCP et UDP</option>
+                </select>
+            </div>
+
+            <div class="modal-buttons">
+                <button class="btn-danger" onclick="closeFirewallModal()"> Annuler</button>
+                <button class="btn-primary" onclick="applyFirewallRule()"> Appliquer</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="container">
+        <header>
+            <h1> Système de Scanning de Ports</h1>
+        </header>
+
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-number" id="stat-open">0</div>
+                <div class="stat-label">Ports Ouverts</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number" id="stat-services">0</div>
+                <div class="stat-label">Services Détectés</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number" id="stat-vulns">0</div>
+                <div class="stat-label">Vulnérabilités</div>
+            </div>
+        </div>
+
+        <div class="main-grid">
+            <!-- Zone de Contrôle -->
+            <div class="card">
+                <h2>
+                    <span class="status-indicator status-idle" id="status-indicator"></span>
+                    Contrôle du Scan
+                </h2>
+                <div style="text-align: center; padding: 40px 20px;">
+                    <button class="btn-primary" id="startScanBtn" onclick="openModal()" 
+                            style="width: 100%; padding: 20px; font-size: 1.2em;">
+                         Démarrer un Scan
+                    </button>
+                    <button class="btn-danger" id="stopScanBtn" onclick="stopScan()" 
+                            style="width: 100%; margin-top: 15px; display: none;">
+                         Arrêter le Scan
+                    </button>
+                    <button class="btn-secondary" onclick="openFirewallModal()" 
+                            style="width: 100%; padding: 15px; margin-bottom: 20px; margin-top: 15px; font-size: 1.1em;">
+                         Gestion Firewall
+                    </button>
+                </div>
+            </div>
+
+            <!-- Résultats du Scan -->
+            <div class="card">
+                <h2> Résultats du Scan de Ports</h2>
+                <div class="results-section" id="port-results">
+                    <p style="color: #a0a0a0; text-align: center; padding: 20px;">
+                        Aucun scan effectué. Lancez un scan pour voir les résultats.
+                    </p>
+                </div>
+                <button class="btn-success" onclick="exportPDF()" style="width: 100%; margin-top: 10px;">
+                     Exporter en PDF
+                </button>
+            </div>
+
+            <!-- Chatbot -->
+            <div class="card chatbot-section">
+                <h2> Assistant Intelligent</h2>
+                <div class="chat-container">
+                    <div class="chat-messages" id="chat-messages">
+                        <div class="message message-bot">
+                            Bonjour ! Je suis votre assistant de sécurité. Je peux vous aider à :
+                            <br><br>
+                            • Interpréter les résultats de scan<br>
+                            • Expliquer les ports ouverts détectés<br>
+                            • Recommander des actions de sécurité<br>
+                            <br>
+                            Posez-moi vos questions !
+                        </div>
+                    </div>
+                    <div class="chat-input-container">
+                        <input type="text" id="chat-input" placeholder="Posez votre question..." 
+                               onkeypress="handleChatEnter(event)">
+                        <button class="btn-primary" onclick="sendMessage()">Envoyer</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+<script src="{{ url_for('static', filename='js/app.js') }}"></script> 
+</body> 
+</html>
