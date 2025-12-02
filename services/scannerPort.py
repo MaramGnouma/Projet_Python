@@ -11,22 +11,11 @@ scan_status = {
 }
 
 def PortScan(target, ports, scan_type='tcp'):
-    """
-    Effectue un scan de ports avec nmap
-    
-    Args:
-        target (str): Adresse IP cible
-        ports (str): Plage de ports (ex: "1-1000")
-        scan_type (str): Type de scan ('tcp', 'syn', 'udp')
-    
-    Returns:
-        str: Résultats du scan en JSON
-    """
     # Définir les arguments selon le type de scan
     scan_arguments = {
-        'tcp': '-sT -sV',           # TCP Connect + Version detection
-        'syn': '-sS -sV',           # SYN Scan + Version detection (nécessite admin)
-        'udp': '-sU',               # UDP Scan
+        'tcp': '-sT -sV',           
+        'syn': '-sS -sV',           
+        'udp': '-sU',               
     }
     
     args = scan_arguments.get(scan_type)
@@ -78,19 +67,6 @@ def PortScan(target, ports, scan_type='tcp'):
 
 
 def start_scan_service(target, port_start, port_end, scan_type, mode):
-    """
-    Service pour démarrer un scan de ports
-    
-    Args:
-        target (str): Adresse IP cible
-        port_start (str): Port de début
-        port_end (str): Port de fin
-        scan_type (str): Type de scan ('tcp', 'syn', 'udp')
-        mode (str): Mode de scan ('complete' ou 'custom')
-    
-    Returns:
-        tuple: (dict: réponse, int: code HTTP)
-    """
     global scan_status
     
     if scan_status["running"]:

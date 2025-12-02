@@ -144,8 +144,12 @@ async function executeScan() {
     if (currentScanMode === 'complete') {
         // Utilisation de la fonction réutilisable
         const formData = getScanConfigFromForm('complete');
-        scanConfig = { ...scanConfig, ...formData };
+         for (let key in formData) {
+            scanConfig[key] = formData[key];
+        }
+
         scanConfig.include_packages = true;
+
         
         console.log('Démarrage du scan complet:', scanConfig);
     } else {
@@ -219,7 +223,7 @@ function checkScanStatus() {
         } catch (error) {
             console.error('Erreur lors de la vérification du statut:', error);
         }
-    }, 2000);
+    }, 1000);
 }
 
 function displayScanResults(results) {
